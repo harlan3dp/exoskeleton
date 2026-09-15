@@ -58,6 +58,8 @@ for i in range(1, len(calculated_velocity)):
     calculated_accel.append(float(calc_accel))
 
 
+#--Plotting--
+
 x = timestamp
 
 plt.plot(x, filtered_angle, color='red')
@@ -70,6 +72,18 @@ plt.grid(True)
 
 plt.savefig("angle_plot.png")
 
+plt.close()
+
+plt.plot(x, velocity)
+plt.plot(calculated_timestamp, calculated_velocity)
+
+plt.xlabel("Timestamp")
+plt.ylabel("Velocity:")
+plt.title("Velocity vs. time")
+
+plt.grid(True)
+
+plt.savefig("velocity_plot.png")
 plt.close()
 
 
