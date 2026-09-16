@@ -19,94 +19,110 @@ calculated_accel = []
 
 print("Opening CSV 'logger.csv'...")
 
-with open ('logger.csv', newline='') as csvfile:
-    logreader = csv.reader(csvfile, delimiter=',')
+try:
+    with open ('logger.csv', newline='') as csvfile:
+        logreader = csv.reader(csvfile, delimiter=',')
 
-    next(logreader)
+        next(logreader)
 
-    print("Assigning lists...")
+        print("Assigning lists...")
 
-    for row in logreader:
-        timestamp.append(float(row[0]) / 1000000)
-        angle.append(float(row[2]))
-        velocity.append(float(row[3]))
-        acceleration.append(float(row[4]))
+        for row in logreader:
+            timestamp.append(float(row[0]) / 1000000)
+            angle.append(float(row[2]))
+            velocity.append(float(row[3]))
+            acceleration.append(float(row[4]))
 
-print("Calculating...")
+    print("Calculating...")
 
-filtered_velocity = savgol_filter(velocity, 11, 3)
-filtered_angle = savgol_filter(angle, 11, 2)
+    filtered_velocity = savgol_filter(velocity, 11, 3)
+    filtered_angle = savgol_filter(angle, 11, 2)
 
-for i in range(1, len(filtered_angle)):
+    for i in range(1, len(filtered_angle)):
 
-    angle_diff = filtered_angle[i] - filtered_angle[i-1]
-    time_diff = timestamp[i] - timestamp[i-1]
+        angle_diff = filtered_angle[i] - filtered_angle[i-1]
+        time_diff = timestamp[i] - timestamp[i-1]
 
-    calc_velocity = angle_diff / time_diff
+        calc_velocity = angle_diff / time_diff
 
-    calculated_velocity.append(float(calc_velocity))
-    calculated_timestamp.append(timestamp[i])
-
-
-
-for i in range(1, len(calculated_velocity)):
-    velocity_diff = calculated_velocity[i] - calculated_velocity[i-1]
-    time_diff = calculated_timestamp[i] - calculated_timestamp[i-1]
-
-    calc_accel = velocity_diff / time_diff
-
-    calculated_accel.append(float(calc_accel))
-
-
-#--Plotting--
-
-x = timestamp
-
-plt.plot(x, filtered_angle, color='red')
-
-plt.xlabel("Timestamp")
-plt.ylabel("Angle")
-plt.title("Angle vs. time")
-
-plt.grid(True)
-
-plt.savefig("angle_plot.png")
-
-plt.close()
-
-plt.plot(x, velocity)
-plt.plot(calculated_timestamp, calculated_velocity)
-
-plt.xlabel("Timestamp")
-plt.ylabel("Velocity:")
-plt.title("Velocity vs. time")
-
-plt.grid(True)
-
-plt.savefig("velocity_plot.png")
-plt.close()
-
-
-plt.plot(x, acceleration)
-plt.plot(calculated_timestamp[1:], calculated_accel)
-
-plt.xlabel("Timestamp")
-plt.ylabel("Acceleration")
-plt.title("Acceleration vs. time")
-
-plt.grid(True)
-
-plt.savefig("acceleration_plot.png")
-plt.close()
-
-
-mean_angle = round(sum(angle) / len(angle), 3)
-min_angle = min(angle)
-max_angle = max(angle)
-std_angle = round(statistics.stdev(angle), 3)
-
-print("Mean, min, max, std dev:")
-print(f"{mean_angle},{min_angle},{max_angle},{std_angle}")
+        calculated_velocity.append(float(calc_velocity))
+        calculated_timestamp.append(timestamp[i])
 
 
 
+    for i in range(1, len(calculated_velocity)):
+        velocity_diff = calculated_velocity[i] - calculated_velocity[i-1]
+        time_diff = calculated_timestamp[i] - calculated_timestamp[i-1]
+
+        calc_accel = velocity_diff / time_diff
+
+        calculated_accel.append(float(calc_accel))
+
+
+    #--Plotting--
+
+    x = timestamp
+
+    plt.plot(x, filtered_angle, color='red')
+
+    plt.xlabel("Timestamp")
+    plt.ylabel("Angle")
+    plt.title("Angle vs. time")
+
+    plt.grid(True)
+
+    plt.savefig("angle_plot.png")
+
+    plt.close()
+
+    plt.plot(x, velocity)
+    plt.plot(calculated_timestamp, calculated_velocity)
+
+    plt.xlabel("Timestamp")
+    plt.ylabel("Velocity:")
+    plt.title("Velocity vs. time")
+
+    plt.grid(True)
+
+    plt.savefig("velocity_plot.png")
+    plt.close()
+
+
+    plt.plot(x, acceleration)
+    plt.plot(calculated_timestamp[1:], calculated_accel)
+
+    plt.xlabel("Timestamp")
+    plt.ylabel("Acceleration")
+    plt.title("Acceleration vs. time")
+
+    plt.grid(True)
+
+    plt.savefig("acceleration_plot.png")
+    plt.close()
+
+
+    mean_angle = round(sum(angle) / len(angle), 3)
+    min_angle = min(angle)
+    max_angle = max(angle)
+    std_angle = round(statistics.stdev(angle), 3)
+    range_of_motion = max_angle - min_angle
+
+    max_velocity = max(calculated_velocity)
+
+    min_accel = min(calculated_accel)
+    max_accel = max(calculated_accel)
+
+    print("Angle: Mean, min, max, std dev, ROM:")
+    print(f"{mean_angle},{min_angle},{max_angle},{std_angle},{range_of_motion}")
+
+    print("Velocity: Min:")
+    print({min})
+
+    print("Accel: Min, max:")
+    print(f"{min_accel},{max_accel}")
+
+except FileNotFoundError:
+    print("File 'logger.csv' was not found. Exiting...")
+
+except Exception as E:
+    print(f"Unknown error: {E}")
