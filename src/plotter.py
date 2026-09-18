@@ -3,6 +3,7 @@ import csv
 import statistics
 from scipy.signal import savgol_filter
 
+response = ""
 
 timestamp = []
 angle = []
@@ -16,6 +17,18 @@ calculated_timestamp = []
 
 new_accel = []
 calculated_accel = []
+
+print("Plotter/analysis:")
+print("What do you want to do?")
+print("[1] Normal mode")
+print("[2] Stationary noise test (outputs to term and analysis.txt)")
+print("[3] Exit")   
+
+try:
+    response = input("Awaiting input: ").strip()
+except Exception:
+    print("Not allowed. ")
+
 
 print("Opening CSV 'logger.csv'...")
 
@@ -36,7 +49,7 @@ try:
     print("Calculating...")
 
     filtered_velocity = savgol_filter(velocity, 11, 3)
-    filtered_angle = savgol_filter(angle, 11, 2)
+    filtered_angle = savgol_filter(angle, 7, 2)
 
     for i in range(1, len(filtered_angle)):
 
@@ -64,6 +77,7 @@ try:
     x = timestamp
 
     plt.plot(x, filtered_angle, color='red')
+    plt.plot(x, angle, color='blue')
 
     plt.xlabel("Timestamp")
     plt.ylabel("Angle")
@@ -107,6 +121,8 @@ try:
     std_angle = round(statistics.stdev(angle), 3)
     range_of_motion = max_angle - min_angle
 
+    std_filter = round(statistics.stdev(angle), 3)
+
     max_velocity = max(calculated_velocity)
 
     min_accel = min(calculated_accel)
@@ -115,8 +131,8 @@ try:
     print("Angle: Mean, min, max, std dev, ROM:")
     print(f"{mean_angle},{min_angle},{max_angle},{std_angle},{range_of_motion}")
 
-    print("Velocity: Min:")
-    print({min})
+    print("Velocity: Max:")
+    print(max_velocity)
 
     print("Accel: Min, max:")
     print(f"{min_accel},{max_accel}")
@@ -126,3 +142,43 @@ except FileNotFoundError:
 
 except Exception as E:
     print(f"Unknown error: {E}")
+
+if response == '1':
+    try:
+        with open("analysis.txt", "w", encoding="utf-8") as file:
+            file.write("Analysis:\n")
+            file.write("Angle:\n")
+            file.write(f"Mean: {mean_angle}, min: {min_angle}, max: {max_angle}, std dev: {std_angle}, rom: {range_of_motion}.\n")
+            file.write("Velocity:\n")
+            file.write(f"Max: {max_velocity}. \n")
+            file.write("Accel: \n")
+            file.write(f"Min: {min_accel}, max: {max_accel}\n")
+
+            file.close()
+
+
+    except FileNotFoundError:
+        print("Error: File not found.")
+
+    except Exception as E:
+        print(f"Unknown error: {E}")
+
+elif response == '2':
+    try:
+        with open("analysis.txt", "w", encoding="utf-8") as file:
+            file.write("Stationary noise test: \n\n")
+            file.write("Raw angle:\n")
+            file.write(f"Range = {max_angle - min_angle}, std dev = {std_angle}\n\n")
+
+            file.write("Filtered angle: \n")
+            file.write(f"Range = {max(filtered_angle) - min(filtered_angle)} std dev = {std_filter}")
+
+            print("Stationary noise test: \n\n")
+            print("Raw angle:\n")
+            print(f"Range = {max_angle - min_angle}, std dev = {std_angle}\n\n")
+
+            print("Filtered angle: \n")
+            print(f"Range = max{max(filtered_angle) - min(filtered_angle)} std dev = {std_filter}")
+
+    except Exception as E:
+        print(f"Unknown error: {E}")
