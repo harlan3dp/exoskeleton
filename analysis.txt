@@ -1,7 +1,8 @@
 Stationary noise test: 
 
+Run number 9
 Raw angle:
-Range = 65.3, std dev = 18.542
+Range = 0.0, std dev = 0.0
 
 Filtered angle: 
-Range = max65.26523809523817 std dev = 18.542
+Range = (0, 3), std dev = 0.0

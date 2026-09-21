@@ -4,6 +4,10 @@
 #include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_timer.h"
+#include "driver/spi_master.h"
+#include "driver/sdspi_host.h"
+#include "esp_vfs_fat.h"
+#include "sdmmc_cmd.h"
 
 #define I2C_SDA 23
 #define I2C_SCL 20
