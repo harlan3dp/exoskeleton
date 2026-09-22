@@ -4,17 +4,24 @@
 #include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_timer.h"
+#include "driver/gpio.h"
 
 #define I2C_SDA 23
 #define I2C_SCL 20
 #define AS5600_ADDR 0x36
 
+#define LED_GPIO 2
 
 void app_main(void)
 {   
+    gpio_reset_pin(LED_GPIO);
+    gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
 
     float prevAngle = 0;
     float prevVol = 0;
+
+    bool prevLedState = 0;
+
     int64_t prevTime = esp_timer_get_time();
 
     i2c_master_bus_config_t bus_config = {
@@ -104,6 +111,17 @@ void app_main(void)
         {
             printf("I2C read failed: %s\n",
                    esp_err_to_name(result));
+
+            if (prevLedState == 0) {
+                gpio_set_level(LED_GPIO, 1);
+                prevLedState = 1;
+                }
+                
+            else {
+                gpio_set_level(LED_GPIO, 0);
+                prevLedState = 0;
+            }
+
         }       
 
         vTaskDelay(pdMS_TO_TICKS(10));
