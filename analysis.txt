@@ -1,0 +1,8 @@
+Stationary noise test: 
+
+Run number 9
+Raw angle:
+Range = 0.0, std dev = 0.0
+
+Filtered angle: 
+Range = (0, 3), std dev = 0.0

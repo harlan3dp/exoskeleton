@@ -6,6 +6,11 @@
 #include "esp_timer.h"
 #include "driver/gpio.h"
 
+#include "driver/spi_master.h"
+#include "driver/sdspi_host.h"
+#include "esp_vfs_fat.h"
+#include "sdmmc_cmd.h"
+
 #define I2C_SDA 23
 #define I2C_SCL 20
 #define AS5600_ADDR 0x36
