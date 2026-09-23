@@ -15,19 +15,60 @@
 #define I2C_SCL 20
 #define AS5600_ADDR 0x36
 
-#define LED_GPIO 2
+#define PIN_NUM_MISO 2
+#define PIN_NUM_MOSI 7
+#define PIN_NUM_CLK 6
+#define PIN_NUM_CS 10
 
 void app_main(void)
-{   
-    gpio_reset_pin(LED_GPIO);
-    gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
-
+{  
     float prevAngle = 0;
     float prevVol = 0;
 
-    bool prevLedState = 0;
-
     int64_t prevTime = esp_timer_get_time();
+
+    printf("SD Card test program V0.0. \n");
+
+    spi_bus_config_t bus_cfg = {
+        .mosi_io_num = PIN_NUM_MOSI,
+        .miso_io_num = PIN_NUM_MISO,
+        .sclk_io_num = PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1
+    };
+
+    ESP_ERROR_CHECK(
+        spi_bus_initialize(
+            SPI2_HOST,
+            &bus_cfg,
+            SDSPI_DEFAULT_DMA
+        )
+    );
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.slot = SPI2_HOST;
+
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.host_id = SPI2_HOST;
+
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024
+    };
+
+    sdmmc_card_t *card;
+
+    ESP_ERROR_CHECK(
+        esp_vfs_fat_sdspi_mount(
+            "/sdcard",
+            &host,
+            &slot_config,
+            &mount_config,
+            &card
+        )
+    );
 
     i2c_master_bus_config_t bus_config = {
         .i2c_port = I2C_NUM_0,
@@ -60,75 +101,85 @@ void app_main(void)
         )
     );
 
-    printf("AS5600 connected!\n");
+    printf("AS5600 connected succesfully. \n");
 
-    while (1)
-    {
-        uint8_t reg = 0x0C;
-        uint8_t data[2];
+    printf("SD card mounted succesfully. \n");
 
-        esp_err_t result = i2c_master_transmit_receive(
-            as5600,
-            &reg,
-            1,
-            data,
-            2,
-            100
-        );
+    FILE *file = fopen("/sdcard/logger.csv", "w");
 
-        if (result == ESP_OK)
-        {
-            uint16_t raw_angle =
-                ((uint16_t)data[0] << 8) | data[1];
+    if (file == NULL) {
+        printf("Failed to open file. \n");
+    }
 
-            raw_angle &= 0x0FFF;
+    else {
+        fprintf(file, "'timestamp', 'raw', 'angle', 'velocity', 'acceleration'\n");
 
-            float angle = raw_angle * 360.0f / 4096.0f;
+        for (int i = 0; i < 1000; i++) {
+            uint8_t reg = 0x0C;
+            uint8_t data[2];
 
-            int64_t currentTime = esp_timer_get_time();
-            float elapsedSeconds = (currentTime - prevTime) / 1000000.0f;
+            esp_err_t result = i2c_master_transmit_receive(
+                as5600,
+                &reg,
+                1,
+                data,
+                2,
+                100
+            );
 
-            float angleDiff = angle - prevAngle;
+            if (result == ESP_OK)
+            {
+                uint16_t raw_angle =
+                    ((uint16_t)data[0] << 8) | data[1];
 
-            if (angleDiff > 180) {
-                angleDiff -= 360;
+                raw_angle &= 0x0FFF;
+
+                float angle = raw_angle * 360.0f / 4096.0f;
+
+                int64_t currentTime = esp_timer_get_time();
+                float elapsedSeconds = (currentTime - prevTime) / 1000000.0f;
+
+                float angleDiff = angle - prevAngle;
+
+                if (angleDiff > 180) {
+                    angleDiff -= 360;
+                }
+
+                else if (angleDiff < -180) {
+                    angleDiff +=360;
+                }
+
+                prevAngle = angle;
+                prevTime = currentTime;
+
+                float angular_velocity = angleDiff / elapsedSeconds;
+
+                float angleVolDiff = angular_velocity - prevVol;
+                
+                float angularAccel = angleVolDiff / elapsedSeconds;
+
+                fprintf(file, "%lld,%u,%.2f,%.2f,%.2f\n", currentTime, raw_angle, angle, angular_velocity, angularAccel);
+
+                prevVol = angular_velocity;
+
             }
+            else
+            {
+                printf("I2C read failed: %s\n",
+                    esp_err_to_name(result));
 
-            else if (angleDiff < -180) {
-                angleDiff +=360;
-            }
 
-            prevAngle = angle;
-            prevTime = currentTime;
+            }       
 
-            float angular_velocity = angleDiff / elapsedSeconds;
-
-            float angleVolDiff = angular_velocity - prevVol;
-            
-            float angularAccel = angleVolDiff / elapsedSeconds;
-
-            printf("%lld,%u,%.2f,%.2f,%.2f\n", currentTime, raw_angle, angle, angular_velocity, angularAccel);
-
-            prevVol = angular_velocity;
+            vTaskDelay(pdMS_TO_TICKS(10));
 
         }
-        else
-        {
-            printf("I2C read failed: %s\n",
-                   esp_err_to_name(result));
 
-            if (prevLedState == 0) {
-                gpio_set_level(LED_GPIO, 1);
-                prevLedState = 1;
-                }
-                
-            else {
-                gpio_set_level(LED_GPIO, 0);
-                prevLedState = 0;
-            }
+        fclose(file);
 
-        }       
-
-        vTaskDelay(pdMS_TO_TICKS(10));
+        printf("File written successfully. \n");
     }
+
+    
+    
 }
