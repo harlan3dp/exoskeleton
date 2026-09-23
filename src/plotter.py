@@ -160,6 +160,17 @@ while True:
         plt.close()
 
 
+        time_difference = []
+
+        for i in range(1, len(timestamp)):
+            difference = timestamp[i] - timestamp[i-1]
+            time_difference.append(difference)
+
+        print("Mean time diff", statistics.mean(time_difference) * 1000)
+        print("Std time diff", statistics.stdev(time_difference) * 1000)
+        print("Min time diff", min(time_difference) * 1000)
+        print("Max time diff", max(time_difference) * 1000)
+
         mean_angle = round(sum(angle) / len(angle), 3)
         min_angle = min(angle)
         max_angle = max(angle)
