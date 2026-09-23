@@ -7,3 +7,5 @@ acceleration_plot.png
 velocity_plot.png
 angle_plot.png
 logger.csv
+sd_backup.c
+analysis.txt
