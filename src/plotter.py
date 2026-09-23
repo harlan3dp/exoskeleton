@@ -1,8 +1,12 @@
+print("Loading...")
+
 import matplotlib.pyplot as plt
 import csv
 import statistics
 from scipy.signal import savgol_filter
 import json
+import os
+from scipy.signal import find_peaks
 
 success = 100
 generalFailure = 300
@@ -65,13 +69,48 @@ while True:
     print("What do you want to do?")
     print("[1] Normal mode")
     print("[2] Stationary noise test (outputs to term and analysis.txt)")
-    print("[3] Exit")   
+    print("[3] Debug")
+    print("[4] Gait detection (BETA)")
+    print("[5] Exit")   
 
     try:
         response = input("Awaiting input: ").strip()
     except Exception:
         print("Not allowed. ")
 
+    def responseThree():
+        bool(successCurrent) = 1
+        if os.path.isfile("analysis.txt"):
+            print("Analysis.txt exists.")
+
+        else:
+            print("Analysis.txt does not exist.")
+            successCurrent = 0
+
+        if os.path.isfile("logger.csv"):
+            print("Logger.csv exists.")
+
+        else:
+            print("Logger.csv does not exist.")
+            successCurrent = 0
+
+        if os.path.isfile("iteration.txt"):
+            print("Iteration.txt exists.")
+
+        else:
+            print("Iteration.txt does not exist. ")
+            successCurrent = 0
+
+        if successCurrent == 1:
+            print(f"Success (code {success})")
+
+    if response == '3':
+        responseThree()
+        break
+
+    elif response == '5':
+        print(f"Exiting (code {success}.)")
+        break
 
     print("Opening CSV 'logger.csv'...")
 
@@ -252,8 +291,8 @@ while True:
             print(f"Unknown error: {E}")
             break
 
-    elif response == '3':
-        print(f"Exiting (code {success}).")
-        break
-
+    elif response == '4':
+        indices, properties = find_peaks(filtered_angle, prominence=0.5)
+        plt.plot(x, filtered_angle)
+        plt.plot(indices,filtered_angle[indices], "ro", label="detected peaks")
 
